@@ -1,0 +1,47 @@
+service: sns-topic-validator-sls
+
+frameworkVersion: ">=1.2.0 <2.0.0"
+
+provider:
+  name: aws
+  region: ${env:AWS_REGION, 'us-east-1'}
+  runtime: python3.7
+  deploymentBucket: ${opt:deployBucket}
+  stage: ${env:AWS_ENV, 'dev'}
+  logRetentionInDays: 14 # cloudwatch logs
+  timeout: 60
+  versionFunctions: true
+  iamRoleStatements:
+    - Effect: "Allow"
+      Action:
+        - "sns:List*"
+      Resource:
+        - "*"
+
+custom:
+  schedule:
+    dev: false
+    stage: false
+    prod: true
+    other: true
+
+package:
+      exclude:
+        - .git/**
+        - .dockerignore
+        - Dockerfile
+        - .terraform/*
+
+functions:
+  sns-topic-validator:
+    name: 'sns-topic-validator-${self:provider.stage}'
+    handler: handler.main
+    events:
+        - schedule: 
+            rate: rate(1 hour)
+            enabled: ${self:custom.schedule.${self:provider.stage}, self:custom.schedule.other}
+    environment:
+        SLACK_WEBHOOK_URL: ${ssm:/devops/sns-topic-validator/SLACK_WEBHOOK_URL~true}
+        SLACK_MAX_ITEMS: ${ssm:/devops/sns-topic-validator/SLACK_MAX_ITEMS}
+        AWS_ENV: ${self:provider.stage}
+        LOG_LEVEL: 'INFO'
