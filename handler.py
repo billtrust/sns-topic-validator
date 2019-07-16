@@ -45,7 +45,10 @@ def generate_slack_message(validation_results, max_items):
             }
         )
 
-    topic_noun = 'topics' if fail_count > 0 else 'topic'
+    if fail_count == 0:
+        return 0
+
+    topic_noun = 'topics' if fail_count > 1 else 'topic'
     slack_headline = (
             f"*{fail_count} SNS {topic_noun} failed validation "
             f"in AWS_ENV: {aws_env}*"
@@ -70,7 +73,8 @@ def main(event, context):
     slack_data = generate_slack_message(validation_results,
                                         int(os.environ['SLACK_MAX_ITEMS']))
     webhook_url = os.environ['SLACK_WEBHOOK_URL']
-    post_to_slack(webhook_url, slack_data)
+    if slack_data != 0:
+        post_to_slack(webhook_url, slack_data)
     return "You're welcome"
 
 
