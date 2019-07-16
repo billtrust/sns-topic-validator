@@ -74,8 +74,8 @@ iam-docker-run \
 ```bash
 # pip install iam-starter
 LOG_LEVEL=INFO iam-starter \
-    --role bt-role-ops-devops \
-    --profile btdev \
+    --role iam-role-ops-devops \
+    --profile dev \
     --command sls invoke local \
     -f sns-topic-validator
 ```
