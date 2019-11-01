@@ -1,6 +1,6 @@
 import os
 import json
-from botocore.vendored import requests
+import requests
 import logging
 
 logging.basicConfig(level=os.environ.get("LOG_LEVEL", "INFO"))

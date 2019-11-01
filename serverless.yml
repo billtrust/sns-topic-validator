@@ -9,7 +9,7 @@ provider:
   deploymentBucket: ${opt:deployBucket}
   stage: ${env:AWS_ENV, 'dev'}
   logRetentionInDays: 14 # cloudwatch logs
-  timeout: 60
+  timeout: 120
   versionFunctions: true
   iamRoleStatements:
     - Effect: "Allow"
@@ -18,7 +18,18 @@ provider:
       Resource:
         - "*"
 
+plugins:
+  - serverless-prune-plugin
+  - serverless-python-requirements
+
 custom:
+  # serverless-prune-plugin
+  prune:
+    automatic: true
+    number: 5
+  # serverless-python-requirements
+  pythonRequirements:
+    dockerizePip: non-linux
   schedule:
     dev: false
     stage: false
@@ -26,11 +37,12 @@ custom:
     other: true
 
 package:
-      exclude:
-        - .git/**
-        - .dockerignore
-        - Dockerfile
-        - .terraform/*
+    exclude:
+      - .git/**
+      - .dockerignore
+      - Dockerfile
+      - .terraform/*
+      - /terraform
 
 functions:
   sns-topic-validator:
@@ -38,7 +50,7 @@ functions:
     handler: handler.main
     events:
         - schedule: 
-            rate: rate(1 hour)
+            rate: rate(3 hours)
             enabled: ${self:custom.schedule.${self:provider.stage}, self:custom.schedule.other}
     environment:
         SLACK_WEBHOOK_URL: ${ssm:/devops/sns-topic-validator/SLACK_WEBHOOK_URL~true}

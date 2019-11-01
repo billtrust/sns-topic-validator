@@ -1,28 +1,19 @@
-FROM python:3.7 
+FROM python:3.7.3-alpine
 
-ENV NODE_VERSION=8.10.0
-ENV NVM_DIR=/root/.nvm
+RUN apk add --update nodejs npm bash jq && \
+    npm install -g serverless && \
+    pip3 install boto3 python-jenkins awscli
 
-RUN \
-  apt update && \
-  apt install -y wget
-RUN \
-  wget -qO- https://deb.nodesource.com/setup_8.x | bash - && \
-  apt install nodejs && \
-  rm -rf /var/lib/apt/lists/*
+RUN mkdir -p /package
+RUN mkdir -p /app
+WORKDIR /app
 
-# COPY ./requirements.txt .
-# RUN pip install -r requirements.txt -t . && \
+# tell node where to find dependencies (they are not installed in the normal location)
+ENV NODE_PATH /package/node_modules
 
-RUN npm install -g serverless
+# install the dependencies
+COPY package.json /package/package.json
+RUN npm install --prefix /package
 
-WORKDIR /src
-
-COPY . .
-
-ENV PYTHONUNBUFFERED=1
-ENV PYTHONIOENCODING=utf8
-
-ENTRYPOINT ["sls", "invoke", "local", \
-            "-f", "sns-topic-validator", \ 
-            "--deployBucket", "notneededforinvoke"]
+# copy the application
+COPY . /app
